@@ -1,6 +1,15 @@
+// Import custom routes configuration
+//const configureRoutes = require("./src/javascripts/config/routes.js");
+
+// import express from "express";
+// import bodyParser from "body-parser";
+// import cookieParser from "cookie-parser";
+
+// import dotenv from "dotenv";
+// import jwt from "jsonwebtoken";
 const express = require("express");
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
+const cookieParser = require("cookie-parser");
 
 const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
@@ -10,6 +19,13 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 dotenv.config();
 
+//DB Connect
+import { connect } from "./src/config/connect.js";
+connect("mongodb://127.0.0.1:27017/authdb");
+
+//Routing
+import { configureRoutes } from "./src/config/routes.js";
+configureRoutes(app);
 
 let PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
@@ -23,12 +39,12 @@ function createToken(payload) {
 }
 
 function isAuthenticated(username, password) {
-  if (username === "admin@school.edu" && password === "asdf"){
-    return true
-  }else{
-    if (username === "teacher@school.edu" && password === "asdf"){
+  if (username === "admin@school.edu" && password === "asdf") {
+    return true;
+  } else {
+    if (username === "teacher@school.edu" && password === "asdf") {
       return true;
-    }else{
+    } else {
       return false;
     }
   }
@@ -36,67 +52,77 @@ function isAuthenticated(username, password) {
 
 function isAdmin(request, response, next) {
   try {
-    let userDecoded = jwt.verify(request.cookies.token, SECRET_KEY)
+    let userDecoded = jwt.verify(request.cookies.token, SECRET_KEY);
     if (userDecoded.role === "admin") {
-      next()
+      next();
     } else {
       // 403 Forbidden – client authenticated but does not have permission to access the requested resource
-      response.status(403).json({ success: false, message: "Aautherror: client authenticated but does not have permission to access the requested resource" })
+      response.status(403).json({
+        success: false,
+        message:
+          "Aautherror: client authenticated but does not have permission to access the requested resource",
+      });
     }
   } catch (err) {
-    response.status(401).json({ success: false, message: "Autherror: You are not signed in." })
-
+    response
+      .status(401)
+      .json({ success: false, message: "Autherror: You are not signed in." });
   }
 }
 
 function isTeacher(request, response, next) {
   try {
-    let userDecoded = jwt.verify(request.cookies.token, SECRET_KEY)
+    let userDecoded = jwt.verify(request.cookies.token, SECRET_KEY);
     if (userDecoded.role === "teacher") {
-      next()
+      next();
     } else {
       // 403 Forbidden – client authenticated but does not have permission to access the requested resource
-      response.status(403).json({ success: false, message: "Aautherror: client authenticated but does not have permission to access the requested resource" })
+      response.status(403).json({
+        success: false,
+        message:
+          "Aautherror: client authenticated but does not have permission to access the requested resource",
+      });
     }
   } catch (err) {
-    response.status(401).json({ success: false, message: "Autherror: You are not signed in." })
-
+    response
+      .status(401)
+      .json({ success: false, message: "Autherror: You are not signed in." });
   }
 }
 
-app.get('/', function (request, response) {
-  response.sendFile(__dirname + '/views/index.html');
+app.get("/", function (request, response) {
+  response.sendFile(__dirname + "/views/index.html");
 });
 
-app.get('/api/admin', isAdmin, function (request, response) {
-  response.json({ message: "Admin only resource returned" })
+app.get("/api/admin", isAdmin, function (request, response) {
+  response.json({ message: "Admin only resource returned" });
 });
 
-app.get('/api/teacher', isTeacher, function (request, response) {
-  response.json({ message: "Teacher only resource returned" })
+app.get("/api/teacher", isTeacher, function (request, response) {
+  response.json({ message: "Teacher only resource returned" });
 });
 
-app.get('/api/anybody', function (request, response) {
-  response.json({ message: "Anybody resource returned (not protected)" })
+app.get("/api/anybody", function (request, response) {
+  response.json({ message: "Anybody resource returned (not protected)" });
 });
 
 app.post("/api/login", (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
   if (isAuthenticated(username, password)) {
-    let assignedRole = ""
-    if (username == "admin@school.edu"){
-      assignedRole = "admin"
-    }else{
-      assignedRole = "teacher"
+    let assignedRole = "";
+    if (username == "admin@school.edu") {
+      assignedRole = "admin";
+    } else {
+      assignedRole = "teacher";
     }
     let data = {
       username: username,
-      role: assignedRole
+      role: assignedRole,
     };
 
     const token = createToken(data);
-    res.cookie("token", token, { maxAge: 1000 * 60 * 60 })
+    res.cookie("token", token, { maxAge: 1000 * 60 * 60 });
     res.json({
       message: "You authenticated!",
       success: true,

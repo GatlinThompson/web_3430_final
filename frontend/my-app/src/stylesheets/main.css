@@ -57,6 +57,12 @@ button {
   border-color: rgb(112, 102, 102);
 }
 
+footer > button {
+  background-color: transparent;
+  border: none;
+  color: rgb(54, 145, 225);
+}
+
 form.form-style > div {
   margin: 10px;
 }
